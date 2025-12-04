@@ -28,6 +28,8 @@ const ui = {
     },
 
     showSearchResults: (results) => {
+        console.log('UI: Exibindo resultados da busca:', results); 
+
         const container = document.getElementById('search-results');
         if(!container) return;
 
@@ -41,21 +43,30 @@ const ui = {
         results.forEach(client => {
             const div = document.createElement('div');
             div.className = 'search-item';
-            // AQUI: Mudado de client.name para client.nome e client.phone para client.telefone
-            div.innerHTML = `<strong>${client.nome}</strong> <span class="text-muted text-sm">(${client.displayPhone || client.telefone || 'Sem tel'})</span>`;
-            div.onclick = () => app.selectClientForOrder(client);
+            
+            const nomeExibicao = client.nome || client.name || 'Sem Nome';
+            const telExibicao = client.displayPhone || client.telefone || client.phone || 'Sem tel';
+
+            div.innerHTML = `<strong>${nomeExibicao}</strong> <span class="text-muted text-sm">(${telExibicao})</span>`;
+            div.onclick = () => {
+                console.log('UI: Cliente selecionado na busca:', client); 
+                app.selectClientForOrder(client);
+            }
             container.appendChild(div);
         });
         container.classList.remove('hidden');
     },
 
     displaySelectedClient: (client, debt) => {
+        console.log('UI: Exibindo cliente selecionado:', client); 
+
         document.getElementById('order-search').value = '';
         document.getElementById('search-results').classList.add('hidden');
         document.getElementById('selected-client-card').classList.remove('hidden');
         
-        // AQUI: Mudado para client.nome
-        document.getElementById('selected-client-name').textContent = client.nome;
+        const nomeExibicao = client.nome || client.name || 'Cliente';
+
+        document.getElementById('selected-client-name').textContent = nomeExibicao;
         document.getElementById('selected-client-debt').textContent = app.formatCurrency(debt);
     },
 
@@ -70,17 +81,20 @@ const ui = {
     },
 
     showClientDetails: (client, history, totalDebt) => {
+        console.log('UI: Exibindo detalhes do cliente:', client); 
+
         document.getElementById('clients-list-view').classList.add('hidden');
         document.getElementById('client-detail-view').classList.remove('hidden');
 
-        // AQUI: Mudado para client.nome e client.telefone
-        document.getElementById('detail-name').textContent = client.nome;
-        document.getElementById('detail-phone').textContent = client.displayPhone || client.telefone || 'Não informado';
+        const nomeExibicao = client.nome || client.name || 'Cliente';
+        const telExibicao = client.displayPhone || client.telefone || client.phone || 'Não informado';
+
+        document.getElementById('detail-name').textContent = nomeExibicao;
+        document.getElementById('detail-phone').textContent = telExibicao;
         document.getElementById('detail-debt').textContent = app.formatCurrency(totalDebt);
         
-        // Atualiza nome no modal de pagamento também
         const payName = document.getElementById('payment-client-name');
-        if(payName) payName.textContent = client.nome;
+        if(payName) payName.textContent = nomeExibicao;
 
         const historyContainer = document.getElementById('client-history-list');
         historyContainer.innerHTML = '';
@@ -95,8 +109,9 @@ const ui = {
             const div = document.createElement('div');
             div.className = 'list-item';
             
-            const date = new Date(item.date).toLocaleDateString('pt-BR');
-            const amount = app.formatCurrency(item.amount);
+            const dateObj = new Date(item.date);
+            const date = isNaN(dateObj) ? '--/--' : dateObj.toLocaleDateString('pt-BR');
+            const amount = app.formatCurrency(item.amount || 0);
             
             const icon = isPayment ? 'arrow-down-circle' : 'shopping-cart';
             const colorClass = isPayment ? 'text-success' : 'text-danger';
@@ -107,7 +122,7 @@ const ui = {
                     <h4 class="${colorClass} flex items-center gap-2">
                         <i data-lucide="${icon}" size="16"></i> ${isPayment ? 'Pagamento' : 'Pedido'}
                     </h4>
-                    <p class="text-sm text-muted">${date} - ${item.desc}</p>
+                    <p class="text-sm text-muted">${date} - ${item.desc || ''}</p>
                 </div>
                 <div class="font-bold ${colorClass}">
                     ${sign} ${amount}
