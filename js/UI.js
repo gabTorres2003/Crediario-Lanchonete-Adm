@@ -1,32 +1,39 @@
 const ui = {
     openModal: (id) => {
-        document.getElementById(id).classList.add('open');
-        if(id === 'modal-payment') {
-            document.getElementById('payment-date').valueAsDate = new Date();
+        const modal = document.getElementById(id);
+        if(modal) {
+            modal.classList.add('open');
+            if(id === 'modal-payment') {
+                const dateInput = document.getElementById('payment-date');
+                if(dateInput) dateInput.valueAsDate = new Date();
+            }
         }
     },
     closeModal: (id) => {
-        document.getElementById(id).classList.remove('open');
+        const modal = document.getElementById(id);
+        if(modal) modal.classList.remove('open');
     },
     
-    // Navegação
     setActiveNav: (id) => {
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('nav-' + id).classList.add('active');
+        const btn = document.getElementById('nav-' + id);
+        if(btn) btn.classList.add('active');
     },
 
     toggleView: (viewId) => {
         document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
-        document.getElementById('view-' + viewId).classList.remove('hidden');
+        const view = document.getElementById('view-' + viewId);
+        if(view) view.classList.remove('hidden');
         ui.setActiveNav(viewId);
     },
 
-    // Funções de busca de cliente
     showSearchResults: (results) => {
         const container = document.getElementById('search-results');
+        if(!container) return;
+
         container.innerHTML = '';
         
-        if (results.length === 0) {
+        if (!results || results.length === 0) {
             container.classList.add('hidden');
             return;
         }
@@ -34,7 +41,8 @@ const ui = {
         results.forEach(client => {
             const div = document.createElement('div');
             div.className = 'search-item';
-            div.innerHTML = `<strong>${client.name}</strong> <span class="text-muted text-sm">(${client.phone || 'Sem tel'})</span>`;
+            // AQUI: Mudado de client.name para client.nome e client.phone para client.telefone
+            div.innerHTML = `<strong>${client.nome}</strong> <span class="text-muted text-sm">(${client.displayPhone || client.telefone || 'Sem tel'})</span>`;
             div.onclick = () => app.selectClientForOrder(client);
             container.appendChild(div);
         });
@@ -46,7 +54,8 @@ const ui = {
         document.getElementById('search-results').classList.add('hidden');
         document.getElementById('selected-client-card').classList.remove('hidden');
         
-        document.getElementById('selected-client-name').textContent = client.name;
+        // AQUI: Mudado para client.nome
+        document.getElementById('selected-client-name').textContent = client.nome;
         document.getElementById('selected-client-debt').textContent = app.formatCurrency(debt);
     },
 
@@ -55,7 +64,6 @@ const ui = {
         app.state.selectedClientForOrder = null;
     },
 
-    // Visualização de Detalhes
     showClientList: () => {
         document.getElementById('clients-list-view').classList.remove('hidden');
         document.getElementById('client-detail-view').classList.add('hidden');
@@ -65,15 +73,19 @@ const ui = {
         document.getElementById('clients-list-view').classList.add('hidden');
         document.getElementById('client-detail-view').classList.remove('hidden');
 
-        document.getElementById('detail-name').textContent = client.name;
-        document.getElementById('detail-phone').textContent = client.phone || 'Não informado';
+        // AQUI: Mudado para client.nome e client.telefone
+        document.getElementById('detail-name').textContent = client.nome;
+        document.getElementById('detail-phone').textContent = client.displayPhone || client.telefone || 'Não informado';
         document.getElementById('detail-debt').textContent = app.formatCurrency(totalDebt);
-        document.getElementById('payment-client-name').textContent = client.name; // Para modal
+        
+        // Atualiza nome no modal de pagamento também
+        const payName = document.getElementById('payment-client-name');
+        if(payName) payName.textContent = client.nome;
 
         const historyContainer = document.getElementById('client-history-list');
         historyContainer.innerHTML = '';
 
-        if (history.length === 0) {
+        if (!history || history.length === 0) {
             historyContainer.innerHTML = '<p class="text-muted text-center p-4">Nenhum histórico encontrado.</p>';
             return;
         }
@@ -86,7 +98,6 @@ const ui = {
             const date = new Date(item.date).toLocaleDateString('pt-BR');
             const amount = app.formatCurrency(item.amount);
             
-            // Ícone e Cor dependendo se é Pedido ou Pagamento
             const icon = isPayment ? 'arrow-down-circle' : 'shopping-cart';
             const colorClass = isPayment ? 'text-success' : 'text-danger';
             const sign = isPayment ? '-' : '+';
@@ -103,8 +114,8 @@ const ui = {
                 </div>
             `;
             historyContainer.appendChild(div);
-            lucide.createIcons();
         });
+        
+        if(window.lucide) lucide.createIcons();
     }
 };
-
