@@ -1,0 +1,53 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+body {
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    min-height: 100vh;
+    padding-bottom: 40px;
+}
+
+a { text-decoration: none; color: inherit; }
+ul { list-style: none; }
+button { cursor: pointer; border: none; background: none; font-family: inherit; }
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Utilitários Gerais */
+.hidden { display: none !important; }
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: 0.5rem; }
+.gap-4 { gap: 1rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mt-4 { margin-top: 1rem; }
+.mb-4 { margin-bottom: 1rem; }
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+.font-bold { font-weight: 700; }
+.text-sm { font-size: 0.875rem; }
+.text-muted { color: var(--text-muted); }
+.w-full { width: 100%; }
+
+/* Badges de Status */
+.badge {
+    padding: 4px 8px;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.badge-debt { background-color: #fee2e2; color: #991b1b; }
+.badge-paid { background-color: #d1fae5; color: #065f46; }
+.badge-partial { background-color: #fef3c7; color: #92400e; }

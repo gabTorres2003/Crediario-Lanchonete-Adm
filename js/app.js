@@ -1,0 +1,314 @@
+const app = {
+    state: {
+        selectedClientForOrder: null,
+        currentDetailClient: null
+    },
+
+    init: () => {
+        console.log("App v2 iniciado.");
+        
+        // Verifica conexão
+        if (!window._supabaseClient) {
+            console.error("Cliente Supabase não disponível.");
+            return;
+        }
+
+        const dateInput = document.getElementById('order-date');
+        if(dateInput) dateInput.valueAsDate = new Date();
+        
+        const searchInput = document.getElementById('order-search');
+        if(searchInput) {
+            searchInput.addEventListener('input', (e) => app.searchClients(e.target.value));
+        }
+        
+        app.loadDailySummary();
+        if(window.lucide) lucide.createIcons();
+    },
+
+    navigate: (page) => {
+        ui.toggleView(page);
+        if (page === 'clients') app.loadClients();
+        if (page === 'dashboard') app.loadDailySummary();
+    },
+
+    formatCurrency: (val) => {
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+    },
+
+    formatPhone: (phone) => {
+        if (!phone) return '';
+        const clean = phone.replace(/\D/g, '');
+        if (clean.length === 11) return clean.replace(/^(\d{2})(\d{5})(\d{4}).*/, '($1) $2-$3');
+        if (clean.length === 10) return clean.replace(/^(\d{2})(\d{4})(\d{4}).*/, '($1) $2-$3');
+        return phone;
+    },
+
+    // --- CLIENTES ---
+
+    createClient: async () => {
+        const name = document.getElementById('new-client-name').value;
+        const phone = document.getElementById('new-client-phone').value;
+        const obs = document.getElementById('new-client-obs').value;
+
+        if (!name) return alert('Nome é obrigatório');
+
+        const payload = { 
+            nome: name,       
+            telefone: phone.replace(/\D/g, ''),
+            obs: obs 
+        };
+
+        const { data, error } = await window._supabaseClient
+            .from('clientes')
+            .insert(payload)
+            .select();
+
+        if (error) {
+            console.error('Erro Insert:', error);
+            return alert('Erro ao salvar: ' + error.message);
+        }
+
+        ui.closeModal('modal-client');
+        document.getElementById('new-client-name').value = '';
+        document.getElementById('new-client-phone').value = '';
+        if(document.getElementById('new-client-obs')) document.getElementById('new-client-obs').value = '';
+        
+        app.loadClients();
+        alert('Cliente cadastrado com sucesso!');
+    },
+
+    searchClients: async (term) => {
+        if (term.length < 2) {
+            ui.showSearchResults([]);
+            return;
+        }
+        
+        const { data, error } = await window._supabaseClient
+            .from('clientes')
+            .select('*')
+            .ilike('nome', `%${term}%`)
+            .limit(5);
+
+        if (error) return console.error(error);
+        
+        const formattedData = (data || []).map(c => ({
+            ...c,
+            displayPhone: app.formatPhone(c.telefone)
+        }));
+        
+        ui.showSearchResults(formattedData);
+    },
+
+    selectClientForOrder: async (client) => {
+        app.state.selectedClientForOrder = client;
+        const debt = await app.calculateDebt(client.id);
+        ui.displaySelectedClient(client, debt);
+    },
+
+    loadClients: async () => {
+        const filterEl = document.getElementById('client-filter');
+        const filter = filterEl ? filterEl.value : '';
+        
+        let query = window._supabaseClient.from('clientes').select('*');
+        if (filter) {
+            query = query.ilike('nome', `%${filter}%`);
+        }
+
+        const { data: clients, error } = await query.order('nome');
+
+        if (error) return console.error("Erro Load Clients:", error);
+
+        const grid = document.getElementById('clients-grid');
+        if(grid) {
+            grid.innerHTML = '';
+            
+            if (!clients || clients.length === 0) {
+                grid.innerHTML = '<p class="text-muted p-4">Nenhum cliente encontrado.</p>';
+                return;
+            }
+
+            for (const client of clients) {
+                const debt = await app.calculateDebt(client.id);
+                
+                const div = document.createElement('div');
+                div.className = 'card';
+                div.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold text-lg">${client.nome}</h3> 
+                        <span class="badge ${debt > 0.05 ? 'badge-debt' : 'badge-paid'}">
+                            ${debt > 0.05 ? 'Devedor' : 'Ok'}
+                        </span>
+                    </div>
+                    <p class="text-muted text-sm mb-4">${app.formatPhone(client.telefone) || 'Sem telefone'}</p>
+                    <p class="text-sm font-bold mb-4">Dívida: <span class="${debt > 0.05 ? 'text-danger' : 'text-success'}">${app.formatCurrency(debt)}</span></p>
+                    <button class="btn btn-secondary w-full btn-sm" onclick="app.openClientDetails('${client.id}')">
+                        Ver Detalhes
+                    </button>
+                `;
+                grid.appendChild(div);
+            }
+        }
+    },
+
+    // --- PEDIDOS ---
+
+    saveOrder: async () => {
+        if (!app.state.selectedClientForOrder) return alert('Selecione um cliente primeiro.');
+        
+        const amount = parseFloat(document.getElementById('order-total').value);
+        const desc = document.getElementById('order-desc').value;
+        const date = document.getElementById('order-date').value;
+
+        if (!amount || isNaN(amount) || amount <= 0) return alert('Digite um valor válido.');
+
+        const { error } = await window._supabaseClient
+            .from('pedidos')
+            .insert({
+                cliente_id: app.state.selectedClientForOrder.id,
+                total: amount,
+                descricao: desc || 'Consumo',
+                data_pedido: date
+            });
+
+        if (error) return alert('Erro ao salvar pedido: ' + error.message);
+
+        alert('Pedido registrado!');
+        ui.clearSelectedClient();
+        document.getElementById('order-total').value = '';
+        document.getElementById('order-desc').value = '';
+        
+        app.loadDailySummary();
+    },
+
+    loadDailySummary: async () => {
+        const today = new Date().toISOString().split('T')[0];
+        
+        const { data: orders, error } = await window._supabaseClient
+            .from('pedidos')
+            .select(`*, clientes (nome)`)
+            .eq('data_pedido', today);
+
+        if (error) return console.error("Erro Resumo:", error);
+
+        const safeOrders = orders || [];
+        const total = safeOrders.reduce((sum, order) => sum + parseFloat(order.total), 0);
+        
+        const totalEl = document.getElementById('daily-total');
+        if(totalEl) totalEl.textContent = app.formatCurrency(total);
+
+        const list = document.getElementById('recent-orders-list');
+        if(list) {
+            list.innerHTML = '';
+            
+            const sortedOrders = safeOrders.sort((a,b) => b.id - a.id).slice(0, 5);
+
+            if(sortedOrders.length === 0) {
+                 list.innerHTML = '<p class="text-muted text-sm text-center py-4">Nenhum pedido hoje.</p>';
+                 return;
+            }
+
+            sortedOrders.forEach(order => {
+                const div = document.createElement('div');
+                div.className = 'list-item';
+                div.style.padding = '10px';
+                const nomeCliente = order.clientes ? order.clientes.nome : '(Excluído)';
+                
+                div.innerHTML = `
+                    <div>
+                        <div class="font-bold text-sm">${nomeCliente}</div>
+                        <div class="text-xs text-muted">${order.descricao || '-'}</div>
+                    </div>
+                    <div class="font-bold text-danger text-sm">${app.formatCurrency(order.total)}</div>
+                `;
+                list.appendChild(div);
+            });
+        }
+    },
+
+    // --- DETALHES ---
+
+    calculateDebt: async (clientId) => {
+        const { data: orders } = await window._supabaseClient
+            .from('pedidos')
+            .select('total')
+            .eq('cliente_id', clientId);
+            
+        const { data: payments } = await window._supabaseClient
+            .from('pagamentos')
+            .select('valor_pago')
+            .eq('cliente_id', clientId);
+
+        const totalOrders = orders ? orders.reduce((sum, o) => sum + parseFloat(o.total), 0) : 0;
+        const totalPaid = payments ? payments.reduce((sum, p) => sum + parseFloat(p.valor_pago), 0) : 0;
+
+        return totalOrders - totalPaid;
+    },
+
+    openClientDetails: async (clientId) => {
+        const { data: clients, error } = await window._supabaseClient.from('clientes').select('*').eq('id', clientId);
+        
+        if(error || !clients || clients.length === 0) return alert('Erro ao carregar cliente.');
+        
+        const client = clients[0];
+        app.state.currentDetailClient = client;
+
+        // Pedidos
+        const { data: orders } = await window._supabaseClient
+            .from('pedidos')
+            .select('*')
+            .eq('cliente_id', clientId)
+            .order('data_pedido', { ascending: false });
+
+        // Pagamentos
+        const { data: payments } = await window._supabaseClient
+            .from('pagamentos')
+            .select('*')
+            .eq('cliente_id', clientId)
+            .order('data_pagamento', { ascending: false });
+
+        const history = [
+            ...(orders || []).map(o => ({ 
+                type: 'order', id: o.id, date: o.data_pedido, 
+                amount: o.total, desc: o.descricao || 'Pedido' 
+            })),
+            ...(payments || []).map(p => ({ 
+                type: 'payment', id: p.id, date: p.data_pagamento, 
+                amount: p.valor_pago, desc: `Pagamento (${p.forma_pagamento})` 
+            }))
+        ];
+
+        history.sort((a, b) => new Date(b.date) - new Date(a.date));
+        const debt = await app.calculateDebt(clientId);
+
+        const clientForUI = { ...client, phone: app.formatPhone(client.telefone) };
+        ui.showClientDetails(clientForUI, history, debt);
+    },
+
+    savePayment: async () => {
+        const amount = parseFloat(document.getElementById('payment-amount').value);
+        const method = document.getElementById('payment-method').value;
+        const date = document.getElementById('payment-date').value;
+        const client = app.state.currentDetailClient;
+
+        if (!amount || amount <= 0) return alert('Valor inválido');
+
+        const { error } = await window._supabaseClient
+            .from('pagamentos')
+            .insert({
+                cliente_id: client.id,
+                valor_pago: amount,
+                forma_pagamento: method,
+                data_pagamento: date
+            });
+
+        if (error) return alert('Erro ao registrar pagamento: ' + error.message);
+
+        alert('Pagamento registrado!');
+        ui.closeModal('modal-payment');
+        document.getElementById('payment-amount').value = '';
+        
+        app.openClientDetails(client.id);
+    }
+};
+
+window.addEventListener('DOMContentLoaded', app.init);

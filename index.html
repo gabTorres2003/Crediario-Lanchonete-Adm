@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LanchoneteCred - Gestão de Crediário</title>
+    
+    <!-- Biblioteca Supabase (Obrigatória) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Ícones -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="assets/css/base/variables.css">
+    <link rel="stylesheet" href="assets/css/base/base.css">
+    <link rel="stylesheet" href="assets/css/components/header.css">
+    <link rel="stylesheet" href="assets/css/components/buttons.css">
+    <link rel="stylesheet" href="assets/css/components/outros.css">
+    <link rel="stylesheet" href="assets/css/components/modal.css">
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="main-header">
+        <div class="container header-content">
+            <div class="logo">
+                <i data-lucide="sandwich"></i>
+                <span>LanchoneteCred</span>
+            </div>
+            <nav class="nav-menu">
+                <button class="nav-btn active" onclick="app.navigate('dashboard')" id="nav-dashboard">
+                    <i data-lucide="layout-dashboard"></i> <span>Caixa</span>
+                </button>
+                <button class="nav-btn" onclick="app.navigate('clients')" id="nav-clients">
+                    <i data-lucide="users"></i> <span>Clientes</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mt-4">
+
+        <!-- DASHBOARD -->
+        <section id="view-dashboard">
+            <div class="grid-2">
+                <div>
+                    <div class="card">
+                        <h2 class="mb-4 flex items-center gap-2">
+                            <i data-lucide="shopping-cart" class="text-muted"></i> Registrar Pedido
+                        </h2>
+                        <div class="form-group" style="position: relative;">
+                            <label class="form-label">Cliente</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="order-search" class="form-control" placeholder="Buscar cliente..." autocomplete="off">
+                                <button class="btn btn-secondary btn-icon" title="Novo Cliente" onclick="ui.openModal('modal-client')">
+                                    <i data-lucide="plus"></i>
+                                </button>
+                            </div>
+                            <div id="search-results" class="search-results hidden"></div>
+                            
+                            <div id="selected-client-card" class="hidden mt-2 p-3 bg-blue-50 border border-blue-200 rounded flex justify-between items-center" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: var(--radius-md);">
+                                <div>
+                                    <div class="font-bold text-blue-900" id="selected-client-name">Nome do Cliente</div>
+                                    <div class="text-sm text-blue-700">Saldo Devedor: <span id="selected-client-debt">R$ 0,00</span></div>
+                                </div>
+                                <button onclick="ui.clearSelectedClient()" class="text-red-500 hover:text-red-700">
+                                    <i data-lucide="x"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Descrição</label>
+                            <textarea id="order-desc" class="form-control" rows="3" placeholder="Descrição do pedido..."></textarea>
+                        </div>
+                        <div class="grid-2" style="grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div class="form-group">
+                                <label class="form-label">Valor (R$)</label>
+                                <input type="number" id="order-total" class="form-control" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Data</label>
+                                <input type="date" id="order-date" class="form-control">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary w-full mt-2" onclick="app.saveOrder()">
+                            <i data-lucide="save"></i> Confirmar
+                        </button>
+                    </div>
+                </div>
+                <div class="flex-col gap-4">
+                    <div class="card bg-white">
+                        <h3 class="text-muted text-sm uppercase font-bold">Total Hoje</h3>
+                        <div class="mt-2 text-3xl font-bold text-primary" id="daily-total">R$ 0,00</div>
+                    </div>
+                    <div class="card" style="flex: 1;">
+                        <h3 class="mb-4 text-sm uppercase font-bold text-muted">Últimos Pedidos</h3>
+                        <div id="recent-orders-list" class="flex-col gap-2">
+                            <p class="text-muted text-sm text-center py-4">Carregando...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CLIENTES -->
+        <section id="view-clients" class="hidden">
+            <div id="clients-list-view">
+                <div class="flex justify-between items-center mb-4">
+                    <h2>Gerir Clientes</h2>
+                    <button class="btn btn-primary" onclick="ui.openModal('modal-client')">
+                        <i data-lucide="user-plus"></i> Novo Cliente
+                    </button>
+                </div>
+                <div class="card mb-4" style="padding: 16px;">
+                    <input type="text" id="client-filter" class="form-control" placeholder="Filtrar clientes..." onkeyup="app.loadClients()">
+                </div>
+                <div id="clients-grid" class="grid-3"></div>
+            </div>
+
+            <div id="client-detail-view" class="hidden">
+                <button class="btn btn-secondary mb-4 btn-sm" onclick="ui.showClientList()">
+                    <i data-lucide="arrow-left"></i> Voltar
+                </button>
+                <div class="card mb-4" style="border-left: 5px solid var(--primary);">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h1 id="detail-name" class="font-bold text-xl">Nome</h1>
+                            <p class="text-muted flex items-center gap-2 mt-2">
+                                <i data-lucide="phone" size="16"></i> <span id="detail-phone">--</span>
+                            </p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-muted">Dívida Total</p>
+                            <h2 class="text-3xl font-bold text-danger" id="detail-debt">R$ 0,00</h2>
+                            <button class="btn btn-success btn-sm mt-2" onclick="ui.openPaymentModal()">
+                                <i data-lucide="dollar-sign"></i> Pagar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="mb-4">Histórico</h3>
+                    <div id="client-history-list" class="list-container"></div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modais -->
+    <div id="modal-client" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Novo Cliente</h3>
+                <button onclick="ui.closeModal('modal-client')" class="btn-icon"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Nome</label>
+                    <input type="text" id="new-client-name" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Telefone</label>
+                    <input type="text" id="new-client-phone" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Obs</label>
+                    <textarea id="new-client-obs" class="form-control" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="ui.closeModal('modal-client')">Cancelar</button>
+                <button class="btn btn-primary" onclick="app.createClient()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-payment" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Registrar Pagamento</h3>
+                <button onclick="ui.closeModal('modal-payment')" class="btn-icon"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-4 text-muted">Cliente: <strong id="payment-client-name">Nome</strong></p>
+                <div class="form-group">
+                    <label class="form-label">Valor (R$)</label>
+                    <input type="number" id="payment-amount" class="form-control" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Forma</label>
+                    <select id="payment-method" class="form-control">
+                        <option value="Dinheiro">Dinheiro</option>
+                        <option value="PIX">PIX</option>
+                        <option value="Cartão">Cartão</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Data</label>
+                    <input type="date" id="payment-date" class="form-control">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="ui.closeModal('modal-payment')">Cancelar</button>
+                <button class="btn btn-success" onclick="app.savePayment()">Confirmar</button>
+            </div>
+        </div>
+    </div>
+    <script src="js/supabase-config.js?v=2"></script>
+    <script src="js/UI.js?v=2"></script>
+    <script src="js/app.js?v=2"></script>
+
+</body>
+</html>
