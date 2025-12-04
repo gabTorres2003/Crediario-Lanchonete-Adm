@@ -213,6 +213,12 @@
                 >
                   <i data-lucide="dollar-sign"></i> Pagar
                 </button>
+                <button
+                  class="btn btn-primary btn-sm mt-2"
+                  onclick="app.openEditClientModal()"
+                >
+                  <i data-lucide="edit"></i> Editar
+                </button>
               </div>
             </div>
           </div>
@@ -260,6 +266,49 @@
           </button>
           <button class="btn btn-primary" onclick="app.createClient()">
             Salvar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-edit-client" class="modal-overlay hidden">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h3>Editar Dados do Cliente</h3>
+          <button
+            class="close-btn"
+            onclick="ui.closeModal('modal-edit-client')"
+          >
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="edit-client-id" />
+
+          <div class="form-group">
+            <label class="form-label">Nome Completo</label>
+            <input type="text" id="edit-client-name" class="form-control" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Telefone</label>
+            <input
+              type="text"
+              id="edit-client-phone"
+              class="form-control"
+              placeholder="(00) 00000-0000"
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-secondary"
+            onclick="ui.closeModal('modal-edit-client')"
+          >
+            Cancelar
+          </button>
+          <button class="btn btn-success" onclick="app.updateClient()">
+            Salvar Alterações
           </button>
         </div>
       </div>

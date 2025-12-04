@@ -77,6 +77,45 @@ const app = {
         alert('Cliente cadastrado com sucesso!');
     },
 
+    openEditClientModal: () => {
+        const client = app.state.currentDetailClient;
+        if (!client) return;
+
+        document.getElementById('edit-client-id').value = client.id;
+        document.getElementById('edit-client-name').value = client.nome;
+        document.getElementById('edit-client-phone').value = client.telefone;
+
+        ui.openModal('modal-edit-client');
+    },
+
+    updateClient: async () => {
+        const id = document.getElementById('edit-client-id').value;
+        const nome = document.getElementById('edit-client-name').value;
+        const telefone = document.getElementById('edit-client-phone').value;
+
+        if (!nome) return alert("O nome é obrigatório!");
+
+        const { error } = await window._supabaseClient
+            .from('clientes')
+            .update({ nome: nome, telefone: telefone })
+            .eq('id', id);
+
+        if (error) {
+            console.error(error);
+            return alert("Erro ao atualizar: " + error.message);
+        }
+
+        alert("Cliente atualizado com sucesso!");
+        ui.closeModal('modal-edit-client');
+
+        app.state.currentDetailClient.nome = nome;
+        app.state.currentDetailClient.telefone = telefone;
+        
+        app.viewClientDetails(app.state.currentDetailClient);
+        
+        app.loadClients(); 
+    },
+
     searchClients: async (term) => {
         if (term.length < 2) {
             ui.showSearchResults([]);
