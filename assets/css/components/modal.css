@@ -31,13 +31,17 @@
     justify-content: space-between;
     align-items: center;
 }
-.modal-body { padding: 24px; }
+.modal-body { 
+    padding: 24px; 
+    max-height: 70vh; 
+    overflow-y: auto; 
+}
 .modal-footer {
     padding: 16px 24px;
-    background: var(--bg-body);
     border-top: 1px solid var(--border);
-    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
     display: flex;
     justify-content: flex-end;
-    gap: 12px;
+    gap: 10px; 
+    background-color: #f9fafb;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
