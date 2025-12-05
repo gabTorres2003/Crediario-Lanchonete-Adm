@@ -111,7 +111,7 @@ const app = {
         app.state.currentDetailClient.nome = nome;
         app.state.currentDetailClient.telefone = telefone;
         
-        app.viewClientDetails(app.state.currentDetailClient);
+        app.openClientDetails(app.state.currentDetailClient.id);
         
         app.loadClients(); 
     },
