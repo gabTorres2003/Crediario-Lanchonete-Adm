@@ -92,6 +92,9 @@ const ui = {
     document.getElementById("clients-list-view").classList.add("hidden");
     document.getElementById("client-detail-view").classList.remove("hidden");
 
+    const filterSelect = document.getElementById("history-filter");
+    if (filterSelect) filterSelect.value = "all";
+
     const nomeExibicao = client.nome || client.name || "Cliente";
     const telExibicao =
       client.displayPhone || client.telefone || client.phone || "Não informado";
@@ -103,13 +106,15 @@ const ui = {
 
     const payName = document.getElementById("payment-client-name");
     if (payName) payName.textContent = nomeExibicao;
+  },
 
+  renderHistoryList: (history) => {
     const historyContainer = document.getElementById("client-history-list");
     historyContainer.innerHTML = "";
 
     if (!history || history.length === 0) {
       historyContainer.innerHTML =
-        '<p class="text-muted text-center p-4">Nenhum histórico encontrado.</p>';
+        '<p class="text-muted text-center p-4">Nenhum registro encontrado.</p>';
       return;
     }
 
@@ -126,26 +131,30 @@ const ui = {
         }
       }
       const amount = app.formatCurrency(item.amount || 0);
-
       const icon = isPayment ? "arrow-down-circle" : "shopping-cart";
       const colorClass = isPayment ? "text-success" : "text-danger";
       const sign = isPayment ? "-" : "+";
 
       div.innerHTML = `
-                <div class="list-item-content">
-                    <h4 class="${colorClass} flex items-center gap-2">
-                        <i data-lucide="${icon}" size="16"></i> ${
-        isPayment ? "Pagamento" : "Pedido"
-      }
-                    </h4>
-                    <p class="text-sm text-muted">${date} - ${
-        item.desc || ""
-      }</p>
-                </div>
-                <div class="font-bold ${colorClass}">
-                    ${sign} ${amount}
-                </div>
-            `;
+        <div class="list-item-content" style="display: flex; align-items: center; gap: 10px;">
+            <input type="checkbox" class="history-select" value="${
+              item.id
+            }" style="width: 18px; height: 18px; cursor: pointer;">
+            
+            <div style="flex: 1;">
+                <h4 class="${colorClass} flex items-center gap-2">
+                    <i data-lucide="${icon}" size="16"></i> 
+                    ${isPayment ? "Pagamento" : "Pedido"}
+                </h4>
+                <p class="text-sm text-muted">${date} - ${
+            item.description || "Sem descrição"
+          }</p>
+            </div>
+        </div>
+        <div class="text-right">
+            <span class="font-bold text-lg block">${sign} ${amount}</span>
+        </div>
+    `;
       historyContainer.appendChild(div);
     });
 
