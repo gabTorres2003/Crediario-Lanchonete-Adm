@@ -37,3 +37,13 @@
     padding: 8px;
     border-radius: 50%;
 }
+
+.btn-danger {
+    background-color: white;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+}
+.btn-danger:hover {
+    background-color: var(--danger);
+    color: white;
+}

@@ -135,7 +135,7 @@ const app = {
       document.getElementById("new-client-obs").value = "";
 
     app.loadClients();
-    alert("Cliente cadastrado com sucesso!");
+    await ui.alert("Sucesso", "Cliente atualizado com sucesso!", "success");
   },
 
   openEditClientModal: () => {
@@ -201,8 +201,47 @@ const app = {
 
   selectClientForOrder: async (client) => {
     app.state.selectedClientForOrder = client;
+    app.addToRecents(client);
     const debt = await app.calculateDebt(client.id);
     ui.displaySelectedClient(client, debt);
+  },
+
+  addToRecents: (client) => {
+    let recents = JSON.parse(
+      localStorage.getItem("lanchonete_recents") || "[]"
+    );
+    recents = recents.filter((c) => c.id !== client.id);
+    recents.unshift({
+      id: client.id,
+      nome: client.nome,
+      telefone: client.telefone,
+    });
+    if (recents.length > 5) recents.pop();
+
+    localStorage.setItem("lanchonete_recents", JSON.stringify(recents));
+  },
+
+  showSuggestedClients: async () => {
+    const searchInput = document.getElementById("order-search");
+    if (searchInput.value.length > 0) return;
+
+    // 1. Tenta pegar do histórico local
+    const recents = JSON.parse(
+      localStorage.getItem("lanchonete_recents") || "[]"
+    );
+
+    if (recents.length > 0) {
+      ui.showSearchResults(recents, "Recentes");
+    } else {
+      const { data } = await window._supabaseClient
+        .from("clientes")
+        .select("*")
+        .limit(5);
+
+      if (data) {
+        ui.showSearchResults(data, "Sugestões");
+      }
+    }
   },
 
   loadClients: async () => {
@@ -263,14 +302,14 @@ const app = {
 
   saveOrder: async () => {
     if (!app.state.selectedClientForOrder)
-      return alert("Selecione um cliente primeiro.");
+      return ui.alert("Atenção", "Selecione um cliente primeiro.", "warning");
 
     const amount = parseFloat(document.getElementById("order-total").value);
     const desc = document.getElementById("order-desc").value;
     const date = document.getElementById("order-date").value;
 
     if (!amount || isNaN(amount) || amount <= 0)
-      return alert("Digite um valor válido.");
+      return ui.alert("Digite um valor válido");
 
     const { error } = await window._supabaseClient.from("pedidos").insert({
       cliente_id: app.state.selectedClientForOrder.id,
@@ -281,7 +320,7 @@ const app = {
 
     if (error) return alert("Erro ao salvar pedido: " + error.message);
 
-    alert("Pedido registrado!");
+    await ui.alert("Sucesso", "Pedido registrado!", "success");
     ui.clearSelectedClient();
     document.getElementById("order-total").value = "";
     document.getElementById("order-desc").value = "";
@@ -361,8 +400,8 @@ const app = {
     const totalPaid = payments
       ? payments.reduce((sum, p) => sum + parseFloat(p.valor_pago), 0)
       : 0;
-
-    return totalOrders - totalPaid;
+    const saldo = totalOrders - totalPaid;
+    return saldo < 0 ? 0 : saldo;
   },
 
   openClientDetails: async (clientId) => {
@@ -432,7 +471,9 @@ const app = {
     const totalPaid = history
       .filter((h) => h.type === "payment")
       .reduce((acc, c) => acc + Number(c.amount), 0);
-    const balance = totalDebt - totalPaid;
+    let balance = totalDebt - totalPaid;
+    if (balance < 0) balance = 0;
+
     const balanceFormatted = balance.toLocaleString("pt-BR", {
       style: "currency",
       currency: "BRL",
@@ -523,7 +564,7 @@ const app = {
     const date = document.getElementById("payment-date").value;
     const client = app.state.currentDetailClient;
 
-    if (!amount || amount <= 0) return alert("Valor inválido");
+    if (!amount || amount <= 0) return await ui.alert("Valor inválido");
 
     const { error: payError } = await window._supabaseClient
       .from("pagamentos")
@@ -536,7 +577,7 @@ const app = {
 
     if (payError) {
       console.error(payError);
-      return alert("Erro ao registrar pagamento.");
+      return await ui.alert("Erro ao registrar pagamento");
     }
 
     const selectedCheckboxes = document.querySelectorAll(
@@ -550,15 +591,15 @@ const app = {
       const { error: updateError } = await window._supabaseClient
         .from("pedidos")
         .update({ pago: true })
-        .in("id", orderIdsToUpdate); 
+        .in("id", orderIdsToUpdate);
 
       if (updateError)
         console.error("Erro ao dar baixa nos pedidos", updateError);
     }
 
     ui.closeModal("modal-payment");
-    alert("Pagamento salvo com sucesso!");
-    app.loadClientDetails(client.id); 
+    await ui.alert("Sucesso", "Pagamento salvo com sucesso!", "success");
+    app.loadClientDetails(client.id);
   },
   openReportModal: () => {
     ui.openModal("modal-report");
@@ -579,107 +620,115 @@ const app = {
   generatePDF: (type = "completo", start = null, end = null) => {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
+    
+    // 1. Configuração da Logo
+    const logoEl = document.getElementById("app-logo");
+    let startY = 20;
+    if (logoEl && logoEl.complete) {
+        try {
+            doc.addImage(logoEl, "PNG", 14, 10, 20, 20); 
+            doc.setFontSize(18);
+            doc.text("Sablina Cred Lanches", 38, 22);
+            
+            startY = 40;
+        } catch (e) {
+            console.error("Erro ao adicionar logo no PDF:", e);
+            doc.setFontSize(18);
+            doc.text("Sablina Cred Lanches", 14, 20);
+        }
+    } else {
+        doc.setFontSize(18);
+        doc.text("Sablina Cred Lanches", 14, 20);
+    }
 
+    // 2. Configuração dos Títulos
     let title = "Extrato de Conta";
-    let history = app.state.currentHistory || [];
-
+    let history = [...(app.state.currentHistory || [])];
+    
     if (type === "selecionados") {
-      const selectedIds = Array.from(
-        document.querySelectorAll(".history-select:checked")
-      ).map((cb) => cb.value);
-
-      if (selectedIds.length === 0) {
-        alert("Nenhum item selecionado na lista!");
-        return;
-      }
-      history = history.filter((h) => selectedIds.includes(String(h.id)));
-      title = "Extrato: Itens Selecionados";
+        const selectedIds = Array.from(document.querySelectorAll('.history-select:checked')).map(cb => cb.value);
+        if (selectedIds.length === 0) return ui.alert("Atenção", "Nenhum item selecionado!", "warning");
+        
+        history = history.filter(h => selectedIds.includes(String(h.id)));
+        title = "Extrato: Itens Selecionados";
+        
     } else if (type === "pendentes") {
-      history = history.filter((h) => h.type === "order");
-      title = "Relatório de Pendências";
+        history = history.filter((h) => h.type === "order" && !h.pago);
+        title = "Relatório de Pendências";
+        
     } else if (type === "periodo") {
-      if (!start || !end) return alert("Selecione as datas.");
-
-      history = history.filter((h) => h.date >= start && h.date <= end);
-
-      const startBr = start.split("-").reverse().join("/");
-      const endBr = end.split("-").reverse().join("/");
-      title = `Extrato: ${startBr} a ${endBr}`;
+        if (!start || !end) return ui.alert("Atenção", "Selecione as datas.", "warning");
+        history = history.filter((h) => h.date >= start && h.date <= end);
+        
+        const startBr = start.split('-').reverse().join('/');
+        const endBr = end.split('-').reverse().join('/');
+        title = `Extrato: ${startBr} a ${endBr}`;
     }
-
+    
     history.sort((a, b) => (a.date > b.date ? 1 : -1));
-
-    doc.setFontSize(18);
-    doc.text("LanchoneteCred", 14, 20);
+    
+    // Renderiza subtítulos
     doc.setFontSize(12);
-    doc.text(title, 14, 30);
+    doc.text(title, 14, startY); 
+    
     if (app.state.currentDetailClient) {
-      doc.text(`Cliente: ${app.state.currentDetailClient.name}`, 14, 38);
+        const nomeCliente = app.state.currentDetailClient.nome || "Cliente";
+        doc.text(`Cliente: ${nomeCliente}`, 14, startY + 8);
     }
-
+    
     const tableData = history.map((h) => {
-      const parts = h.date.split("-");
-      const dateBr = `${parts[2]}/${parts[1]}/${parts[0]}`;
-
-      let statusText = h.type === "payment" ? "Pago" : "Pendente";
-
-      return [
-        dateBr,
-        h.type === "payment" ? "Pagamento" : "Pedido",
-        parseFloat(h.amount).toLocaleString("pt-BR", {
-          style: "currency",
-          currency: "BRL",
-        }),
-        statusText,
-      ];
+        const parts = h.date.split('-');
+        const dateBr = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        
+        let statusText = "";
+        if (h.type === "payment") {
+            statusText = "Pagamento"; 
+        } else {
+            statusText = h.pago ? "Pago" : "Pendente";
+        }
+        
+        return [
+            dateBr,
+            h.desc || (h.type === "payment" ? "Pagamento" : "Pedido"),
+            parseFloat(h.amount).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
+            statusText 
+        ];
     });
 
     doc.autoTable({
-      startY: 45,
-      head: [["Data", "Tipo", "Valor", "Status"]],
-      body: tableData,
-      theme: "grid",
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [225, 29, 72] },
+        startY: startY + 15, 
+        head: [["Data", "Descrição", "Valor", "Status"]],
+        body: tableData,
+        theme: "grid",
+        styles: { fontSize: 10 },
+        headStyles: { fillColor: [255, 140, 0] }, 
     });
-
+    
+    // --- Totais ---
     const finalY = doc.lastAutoTable.finalY + 10;
+    
     const totalOrder = history
-      .filter((h) => h.type === "order")
-      .reduce((acc, c) => acc + Number(c.amount), 0);
+        .filter(h => h.type === 'order')
+        .reduce((acc, c) => acc + Number(c.amount), 0);
+        
     const totalPay = history
-      .filter((h) => h.type === "payment")
-      .reduce((acc, c) => acc + Number(c.amount), 0);
+        .filter(h => h.type === 'payment')
+        .reduce((acc, c) => acc + Number(c.amount), 0);
+        
     const balance = totalOrder - totalPay;
-
+    const displayBalance = type === "pendentes" ? totalOrder : balance;
+    
     doc.setFontSize(10);
-    doc.text(
-      `Total Pedidos (nesta visualização): ${totalOrder.toLocaleString(
-        "pt-BR",
-        { style: "currency", currency: "BRL" }
-      )}`,
-      14,
-      finalY
-    );
-    doc.text(
-      `Total Pagamentos (nesta visualização): ${totalPay.toLocaleString(
-        "pt-BR",
-        { style: "currency", currency: "BRL" }
-      )}`,
-      14,
-      finalY + 6
-    );
-
-    doc.setFontSize(14);
-    doc.text(
-      `Saldo Calculado: ${balance.toLocaleString("pt-BR", {
-        style: "currency",
-        currency: "BRL",
-      })}`,
-      14,
-      finalY + 14
-    );
-
+    if (type !== "pendentes") {
+        doc.text(`Total Pedidos: ${totalOrder.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`, 14, finalY);
+        doc.text(`Total Pagos: ${totalPay.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`, 14, finalY + 6);
+        doc.setFontSize(14);
+        doc.text(`Saldo do Período: ${displayBalance.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`, 14, finalY + 14);
+    } else {
+        doc.setFontSize(14);
+        doc.text(`Total Pendente: ${displayBalance.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`, 14, finalY);
+    }
+    
     doc.save(`Extrato_${new Date().getTime()}.pdf`);
     ui.closeModal("modal-report");
   },
@@ -694,6 +743,76 @@ const app = {
       return;
     }
     app.generatePDF(type, start, end);
+  },
+
+  deleteClient: async () => {
+    const client = app.state.currentDetailClient;
+    if (!client) return;
+
+    // 1. Confirmação Estilizada (Substitui o window.confirm)
+    const confirmacao = await ui.confirm(
+      "Excluir Cliente?",
+      `Tem certeza que deseja excluir ${client.nome}? \n\nIsso apagará PERMANENTEMENTE todo o histórico de pedidos e pagamentos dele.`,
+      "Sim, Excluir",
+      "danger"
+    );
+    if (!confirmacao) return;
+
+    // 2. Apagar Pagamentos vinculados
+    const { error: errPay } = await window._supabaseClient
+      .from("pagamentos")
+      .delete()
+      .eq("cliente_id", client.id);
+
+    if (errPay) {
+      console.error(errPay);
+      return ui.alert(
+        "Erro",
+        "Erro ao excluir pagamentos: " + errPay.message,
+        "danger"
+      );
+    }
+
+    // 3. Apagar Pedidos vinculados
+    const { error: errOrder } = await window._supabaseClient
+      .from("pedidos")
+      .delete()
+      .eq("cliente_id", client.id);
+
+    if (errOrder) {
+      console.error(errOrder);
+      return ui.alert(
+        "Erro",
+        "Erro ao excluir pedidos: " + errOrder.message,
+        "danger"
+      );
+    }
+
+    // 4. Apagar o Cliente
+    const { error: errClient } = await window._supabaseClient
+      .from("clientes")
+      .delete()
+      .eq("id", client.id);
+
+    if (errClient) {
+      console.error(errClient);
+      return ui.alert(
+        "Erro",
+        "Erro ao excluir cliente: " + errClient.message,
+        "danger"
+      );
+    }
+
+    // 5. Sucesso e Redirecionamento
+    await ui.alert(
+      "Concluído",
+      "Cliente e histórico excluídos com sucesso!",
+      "success"
+    );
+    app.state.currentDetailClient = null;
+    app.state.currentHistory = [];
+    ui.showClientList();
+    app.loadClients();
   },
 };
 

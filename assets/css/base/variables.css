@@ -1,24 +1,24 @@
 :root {
-    --primary: #e11d48;       /* Vermelho principal */
-    --primary-dark: #be123c;  /* Vermelho escuro hover */
-    --primary-light: #ffe4e6; /* Fundo vermelho claro */
+    /* --- Cores da Marca --- */
+    --primary: #FF8C00;       
+    --primary-dark: #000000;  
+    --primary-light: #fff7e6; 
     
-    --secondary: #f59e0b;     /* Laranja/Amarelo destaque */
+    --secondary: #003366;     
+    --secondary-hover: #002244;
     
-    --text-main: #1f2937;     /* Cinza escuro texto */
-    --text-muted: #6b7280;    /* Cinza médio */
-    --text-light: #f9fafb;    /* Branco/Cinza claro */
+    /* --- Textos e Neutros --- */
+    --text-main: #000000; 
+    --text-muted: #4b5563;
+    --text-light: #FFFFFF;
     
-    --bg-body: #f3f4f6;       /* Fundo da página */
-    --bg-card: #ffffff;       /* Fundo dos cards */
-    
-    --border: #e5e7eb;        /* Bordas */
-    
-    --success: #10b981;       /* Verde sucesso */
-    --danger: #ef4444;        /* Vermelho erro */
-    
-    /* Dimensões */
-    --header-height: 64px;
+    /* --- Fundos --- */
+    --bg-body: #f8f9fa;
+    --bg-card: #FFFFFF;
+    --border: #e5e7eb;
+    --success: #10b981;
+    --danger: #dc2626;
+    --header-height: 84px;
     --radius-sm: 4px;
     --radius-md: 8px;
     --radius-lg: 16px;

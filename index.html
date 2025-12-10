@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LanchoneteCred - Gestão de Crediário</title>
+    <title>Crediário Sablina Lanches</title>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -18,8 +18,13 @@
     <header class="main-header">
       <div class="container header-content">
         <div class="logo">
-          <i data-lucide="sandwich"></i>
-          <span>LanchoneteCred</span>
+          <img
+            src="assets/img/logosablinalanche.png"
+            alt="Logo Sablina Lanches"
+            class="header-logo"
+            id="app-logo"
+          />
+          <span>Sablina Cred Lanches</span>
         </div>
         <nav class="nav-menu">
           <button
@@ -58,6 +63,8 @@
                     class="form-control"
                     placeholder="Buscar cliente..."
                     autocomplete="off"
+                    oninput="app.searchClients(this.value)"
+                    onfocus="app.showSuggestedClients()"
                   />
                   <button
                     class="btn btn-secondary btn-icon"
@@ -206,6 +213,13 @@
                   onclick="app.openEditClientModal()"
                 >
                   <i data-lucide="edit"></i> Editar
+                </button>
+                <button
+                  class="btn btn-danger btn-sm mt-2"
+                  onclick="app.deleteClient()"
+                  title="Excluir cliente e histórico"
+                >
+                  <i data-lucide="trash-2"></i>
                 </button>
               </div>
             </div>
@@ -453,6 +467,32 @@
           <button class="btn btn-primary" onclick="app.confirmGeneratePDF()">
             Gerar PDF
           </button>
+        </div>
+      </div>
+    </div>
+    <div id="modal-alert" class="modal-overlay" style="z-index: 2000">
+      <div class="modal" style="max-width: 400px">
+        <div class="modal-body">
+          <div class="alert-icon-box">
+            <div id="alert-icon-container" class="alert-icon-circle success">
+              <i id="alert-icon" data-lucide="check" size="32"></i>
+            </div>
+          </div>
+
+          <h3 id="alert-title" class="alert-title">Título</h3>
+          <p id="alert-message" class="alert-message">Mensagem aqui...</p>
+
+          <div class="flex gap-2 justify-between">
+            <button
+              id="btn-alert-cancel"
+              class="btn btn-secondary w-full hidden-btn"
+            >
+              Cancelar
+            </button>
+            <button id="btn-alert-confirm" class="btn btn-primary w-full">
+              OK
+            </button>
+          </div>
         </div>
       </div>
     </div>

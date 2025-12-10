@@ -1,0 +1,35 @@
+.alert-icon-box {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+.alert-icon-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.alert-icon-circle.success { background-color: #d1fae5; color: #059669; }
+.alert-icon-circle.danger  { background-color: #fee2e2; color: #dc2626; }
+.alert-icon-circle.warning { background-color: #fef3c7; color: #d97706; }
+
+.alert-title {
+    text-align: center;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text-main);
+}
+
+.alert-message {
+    text-align: center;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+.hidden-btn { display: none !important; }

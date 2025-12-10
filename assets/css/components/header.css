@@ -44,6 +44,13 @@
     color: white;
 }
 
+.header-logo {
+    height: 120px;
+    width: auto;
+    border-radius: var(--radius-sm);
+    object-fit: contain;
+}
+
 @media (max-width: 768px) {
     .nav-btn span { display: none; }
     .header-content { padding: 0 10px; }

@@ -31,9 +31,7 @@ const ui = {
     ui.setActiveNav(viewId);
   },
 
-  showSearchResults: (results) => {
-    console.log("UI: Exibindo resultados da busca:", results);
-
+  showSearchResults: (results, title = null) => {
     const container = document.getElementById("search-results");
     if (!container) return;
 
@@ -44,17 +42,31 @@ const ui = {
       return;
     }
 
+    if (title) {
+      const titleDiv = document.createElement("div");
+      titleDiv.className = "text-xs text-muted font-bold uppercase";
+      titleDiv.style.padding = "8px 10px 4px 10px";
+      titleDiv.style.backgroundColor = "#f9fafb";
+      titleDiv.innerText = title;
+      container.appendChild(titleDiv);
+    }
+
     results.forEach((client) => {
       const div = document.createElement("div");
       div.className = "search-item";
 
       const nomeExibicao = client.nome || client.name || "Sem Nome";
       const telExibicao =
-        client.displayPhone || client.telefone || client.phone || "Sem tel";
+        client.displayPhone || app.formatPhone(client.telefone) || "Sem tel";
 
-      div.innerHTML = `<strong>${nomeExibicao}</strong> <span class="text-muted text-sm">(${telExibicao})</span>`;
+      div.innerHTML = `
+        <div class="flex justify-between items-center w-full">
+            <strong>${nomeExibicao}</strong> 
+            <span class="text-muted text-sm">${telExibicao}</span>
+        </div>
+      `;
+
       div.onclick = () => {
-        console.log("UI: Cliente selecionado na busca:", client);
         app.selectClientForOrder(client);
       };
       container.appendChild(div);
@@ -184,5 +196,84 @@ const ui = {
     } else {
       bulkBar.classList.add("hidden");
     }
+  },
+  alert: (title, message, type = "success") => {
+    return new Promise((resolve) => {
+      ui.setupAlertModal(title, message, type);
+
+      const btnConfirm = document.getElementById("btn-alert-confirm");
+      const btnCancel = document.getElementById("btn-alert-cancel");
+
+      // Configura botão OK
+      btnConfirm.className = `btn w-full ${
+        type === "danger" ? "btn-danger" : "btn-primary"
+      }`;
+      btnConfirm.innerText = "OK";
+      btnConfirm.onclick = () => {
+        ui.closeModal("modal-alert");
+        resolve(true);
+      };
+
+      // Esconde cancelar
+      btnCancel.classList.add("hidden-btn");
+
+      ui.openModal("modal-alert");
+    });
+  },
+
+  // Exibe confirmação (Substituto do window.confirm)
+  confirm: (title, message, confirmText = "Confirmar", type = "warning") => {
+    return new Promise((resolve) => {
+      ui.setupAlertModal(title, message, type);
+
+      const btnConfirm = document.getElementById("btn-alert-confirm");
+      const btnCancel = document.getElementById("btn-alert-cancel");
+
+      // Configura botão Confirmar
+      btnConfirm.className = `btn w-full ${
+        type === "danger" ? "btn-danger" : "btn-primary"
+      }`;
+      btnConfirm.innerText = confirmText;
+      btnConfirm.onclick = () => {
+        ui.closeModal("modal-alert");
+        resolve(true);
+      };
+
+      // Configura botão Cancelar
+      btnCancel.classList.remove("hidden-btn");
+      btnCancel.onclick = () => {
+        ui.closeModal("modal-alert");
+        resolve(false);
+      };
+
+      ui.openModal("modal-alert");
+    });
+  },
+
+  // Helper interno para configurar visual
+  setupAlertModal: (title, message, type) => {
+    const iconContainer = document.getElementById("alert-icon-container");
+    const icon = document.getElementById("alert-icon");
+
+    // Texto
+    document.getElementById("alert-title").innerText = title;
+    document.getElementById("alert-message").innerText = message;
+
+    // Reset Classes
+    iconContainer.className = "alert-icon-circle";
+
+    // Configura Ícone e Cor
+    if (type === "success") {
+      iconContainer.classList.add("success");
+      icon.setAttribute("data-lucide", "check");
+    } else if (type === "danger") {
+      iconContainer.classList.add("danger");
+      icon.setAttribute("data-lucide", "alert-circle");
+    } else {
+      iconContainer.classList.add("warning");
+      icon.setAttribute("data-lucide", "help-circle");
+    }
+
+    if (window.lucide) lucide.createIcons();
   },
 };
