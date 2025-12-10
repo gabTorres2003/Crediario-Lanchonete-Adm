@@ -24,6 +24,15 @@
 
 .list-item-content h4 { margin-bottom: 4px; }
 
+.list-scroll {
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #e5e7eb;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: var(--radius-md);
+}
+
 /* Dropdown de Resultados da Busca */
 .search-results {
     position: absolute;

@@ -10,6 +10,10 @@
     gap: 20px;
 }
 
+.grid-equal {
+    grid-template-columns: 1fr 1fr;
+}
+
 @media (max-width: 768px) {
     .grid-2 { grid-template-columns: 1fr; }
 }
