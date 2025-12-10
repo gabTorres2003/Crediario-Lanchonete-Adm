@@ -1,3 +1,4 @@
+/* Fundo escuro atrás do modal */
 .modal-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -9,43 +10,68 @@
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s;
+    backdrop-filter: blur(2px);
 }
 .modal-overlay.open { opacity: 1; pointer-events: all; }
 
+/* Estrutura do Card do Modal */
 .modal {
     background: white;
     width: 90%;
     max-width: 500px;
     border-radius: var(--radius-lg);
-    padding: 0;
     box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
     transform: scale(0.95);
     transition: transform 0.2s;
+    
+    /* Configuração Flexbox Vital para o Layout */
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh; /* Limita altura para não estourar a tela */
+    overflow: hidden; /* Garante que nada saia das bordas arredondadas */
 }
+
 .modal-overlay.open .modal { transform: scale(1); }
 
+/* Cabeçalho */
 .modal-header {
     padding: 20px 24px;
     border-bottom: 1px solid var(--border);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0; /* Impede que o cabeçalho seja esmagado */
 }
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.modal > form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+
 .modal-body { 
     padding: 24px; 
-    max-height: 70vh;        
-    overflow-y: auto;        
-    overflow-x: hidden;      
+    overflow-y: auto; /* Habilita rolagem APENAS aqui */
+    flex: 1; /* Faz o corpo crescer para ocupar o espaço vazio */
 }
+
+/* Rodapé (Botões) */
 .modal-footer {
     padding: 16px 24px;
     border-top: 1px solid var(--border);
     display: flex;
-    justify-content: flex-end;
-    gap: 12px;     
-    background-color: #f9fafb;
-    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-}
-.modal-footer .btn {
-    flex-shrink: 0;
+    justify-content: flex-end; /* Alinha botões à direita */
+    align-items: center;
+    gap: 12px;
+    background-color: #f9fafb; /* Fundo cinza claro */
+    flex-shrink: 0; /* Impede que o rodapé suma ou encolha */
+    width: 100%; /* Garante largura total */
 }

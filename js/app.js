@@ -29,6 +29,17 @@ const app = {
     if (window.lucide) lucide.createIcons();
   },
 
+  toggleReportDates: () => {
+    const type = document.getElementById("report-type").value;
+    const dateDiv = document.getElementById("report-dates");
+    
+    if (type === "periodo") {
+        dateDiv.classList.remove("hidden");
+    } else {
+        dateDiv.classList.add("hidden");
+    }
+  },
+
   filterHistory: () => {
     const filterType = document.getElementById("history-filter").value;
     let processedHistory = [...(app.state.currentHistory || [])];
