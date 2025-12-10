@@ -52,6 +52,25 @@
 }
 
 @media (max-width: 768px) {
-    .nav-btn span { display: none; }
-    .header-content { padding: 0 10px; }
+    .header-content { 
+        padding: 0 12px; 
+    }
+
+    .nav-btn span { 
+        display: none; 
+    }
+    
+    .nav-btn {
+        padding: 8px; 
+    }
+    
+    .header-logo {
+        height: 32px;
+    }
+}
+
+@media (max-width: 380px) {
+    .logo span {
+        display: none; 
+    }
 }

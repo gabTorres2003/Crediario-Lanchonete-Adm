@@ -23,3 +23,22 @@
 }
 .card-info .text-title { color: #1e3a8a; font-weight: 700; }
 .card-info .text-desc { color: #1d4ed8; font-size: 0.875rem; }
+
+@media (max-width: 768px) {
+    .card {
+        padding: 16px; 
+    }
+    
+    .card .flex.justify-between {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .card .text-right {
+        text-align: left;
+        margin-top: 10px;
+        width: 100%;
+        border-top: 1px solid var(--border);
+        padding-top: 10px;
+    }
+}

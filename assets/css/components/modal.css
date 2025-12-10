@@ -27,8 +27,8 @@
     /* Configuração Flexbox Vital para o Layout */
     display: flex;
     flex-direction: column;
-    max-height: 90vh; /* Limita altura para não estourar a tela */
-    overflow: hidden; /* Garante que nada saia das bordas arredondadas */
+    max-height: 90vh;
+    overflow: hidden; 
 }
 
 .modal-overlay.open .modal { transform: scale(1); }
@@ -40,7 +40,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-shrink: 0; /* Impede que o cabeçalho seja esmagado */
+    flex-shrink: 0;
 }
 
 .modal-header h3 {
@@ -74,4 +74,25 @@
     background-color: #f9fafb;
     flex-shrink: 0; 
     width: 100%;
+}
+
+@media (max-width: 480px) {
+    .modal {
+        width: 95%; 
+        max-height: 95vh;
+    }
+    
+    .modal-body {
+        padding: 16px; 
+    }
+    
+    .modal-footer {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .modal-footer .btn {
+        width: 100%;
+        justify-content: center;
+    }
 }
