@@ -59,8 +59,8 @@
 
 .modal-body { 
     padding: 24px; 
-    overflow-y: auto; /* Habilita rolagem APENAS aqui */
-    flex: 1; /* Faz o corpo crescer para ocupar o espaço vazio */
+    overflow-y: auto; 
+    flex: 1; 
 }
 
 /* Rodapé (Botões) */
@@ -68,10 +68,10 @@
     padding: 16px 24px;
     border-top: 1px solid var(--border);
     display: flex;
-    justify-content: flex-end; /* Alinha botões à direita */
+    justify-content: flex-end;
     align-items: center;
     gap: 12px;
-    background-color: #f9fafb; /* Fundo cinza claro */
-    flex-shrink: 0; /* Impede que o rodapé suma ou encolha */
-    width: 100%; /* Garante largura total */
+    background-color: #f9fafb;
+    flex-shrink: 0; 
+    width: 100%;
 }

@@ -112,6 +112,9 @@ const ui = {
     const historyContainer = document.getElementById("client-history-list");
     historyContainer.innerHTML = "";
 
+    const bulkActions = document.getElementById("bulk-actions");
+    if (bulkActions) bulkActions.classList.add("hidden");
+
     if (!history || history.length === 0) {
       historyContainer.innerHTML =
         '<p class="text-muted text-center p-4">Nenhum registro encontrado.</p>';
@@ -130,25 +133,36 @@ const ui = {
           date = `${parts[2]}/${parts[1]}/${parts[0]}`;
         }
       }
+
       const amount = app.formatCurrency(item.amount || 0);
       const icon = isPayment ? "arrow-down-circle" : "shopping-cart";
       const colorClass = isPayment ? "text-success" : "text-danger";
       const sign = isPayment ? "-" : "+";
 
+      let statusBadge = "";
+      if (!isPayment) {
+        if (item.pago) {
+          statusBadge = `<span class="badge badge-paid" style="font-size: 0.7em; margin-left: 8px;">Pago</span>`;
+        } else {
+          statusBadge = `<span class="badge badge-debt" style="font-size: 0.7em; margin-left: 8px;">Pendente</span>`;
+        }
+      }
+
       div.innerHTML = `
         <div class="list-item-content" style="display: flex; align-items: center; gap: 10px;">
-            <input type="checkbox" class="history-select" value="${
-              item.id
-            }" style="width: 18px; height: 18px; cursor: pointer;">
+            <input type="checkbox" class="history-select" value="${item.id}" 
+                   style="width: 18px; height: 18px; cursor: pointer;"
+                   onchange="ui.toggleBulkActions()">
             
             <div style="flex: 1;">
                 <h4 class="${colorClass} flex items-center gap-2">
                     <i data-lucide="${icon}" size="16"></i> 
                     ${isPayment ? "Pagamento" : "Pedido"}
+                    ${statusBadge}
                 </h4>
                 <p class="text-sm text-muted">${date} - ${
-            item.description || "Sem descrição"
-          }</p>
+        item.desc || "Sem descrição"
+      }</p>
             </div>
         </div>
         <div class="text-right">
@@ -159,5 +173,16 @@ const ui = {
     });
 
     if (window.lucide) lucide.createIcons();
+  },
+
+  toggleBulkActions: () => {
+    const checkedBoxes = document.querySelectorAll(".history-select:checked");
+    const bulkBar = document.getElementById("bulk-actions");
+
+    if (checkedBoxes.length > 0) {
+      bulkBar.classList.remove("hidden");
+    } else {
+      bulkBar.classList.add("hidden");
+    }
   },
 };

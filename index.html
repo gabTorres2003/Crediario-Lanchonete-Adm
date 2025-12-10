@@ -96,7 +96,7 @@
                   placeholder="Descrição do pedido..."
                 ></textarea>
               </div>
-              
+
               <div class="grid-2 grid-equal gap-2">
                 <div class="form-group">
                   <label class="form-label">Valor (R$)</label>
@@ -180,7 +180,7 @@
               <i data-lucide="message-circle"></i> WhatsApp
             </button>
           </div>
-          
+
           <div class="card mb-4 card-highlight">
             <div class="flex justify-between items-start">
               <div>
@@ -197,7 +197,7 @@
                 </h2>
                 <button
                   class="btn btn-success btn-sm mt-2"
-                  onclick="ui.openModal('modal-payment')"
+                  onclick="app.openPaymentModal()"
                 >
                   <i data-lucide="dollar-sign"></i> Pagar
                 </button>
@@ -234,6 +234,34 @@
               </div>
             </div>
           </div>
+          <div
+            id="bulk-actions"
+            class="card-info hidden mb-4"
+            style="
+              background-color: var(--primary-light);
+              border-color: var(--primary);
+            "
+          >
+            <div class="flex items-center gap-2">
+              <strong class="text-primary">Itens selecionados</strong>
+            </div>
+            <div class="flex gap-2">
+              <button
+                class="btn btn-success btn-sm"
+                onclick="app.paySelectedItems()"
+              >
+                <i data-lucide="dollar-sign" size="14"></i> Pagar Selecionados
+              </button>
+
+              <button
+                class="btn btn-primary btn-sm"
+                onclick="app.generatePDF('selecionados')"
+              >
+                <i data-lucide="file-text" size="14"></i> Gerar PDF
+              </button>
+            </div>
+          </div>
+
           <div id="client-history-list" class="flex-col gap-2 mt-2"></div>
         </div>
       </section>

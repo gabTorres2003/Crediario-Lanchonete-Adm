@@ -32,11 +32,11 @@ const app = {
   toggleReportDates: () => {
     const type = document.getElementById("report-type").value;
     const dateDiv = document.getElementById("report-dates");
-    
+
     if (type === "periodo") {
-        dateDiv.classList.remove("hidden");
+      dateDiv.classList.remove("hidden");
     } else {
-        dateDiv.classList.add("hidden");
+      dateDiv.classList.add("hidden");
     }
   },
 
@@ -394,7 +394,7 @@ const app = {
         date: o.data_pedido,
         amount: o.total,
         desc: o.descricao || "Pedido",
-        pago: o.pago 
+        pago: o.pago,
       })),
       ...(payments || []).map((p) => ({
         type: "payment",
@@ -420,15 +420,11 @@ const app = {
       return alert("Cliente sem telefone cadastrado.");
     }
 
-    // Limpa o telefone (remove parênteses, traços, espaços)
     let phone = client.telefone.replace(/\D/g, "");
 
-    // Adiciona o código do Brasil (55) se não tiver
     if (phone.length <= 11) {
       phone = "55" + phone;
     }
-
-    // Calcula saldo
     const history = app.state.currentHistory || [];
     const totalDebt = history
       .filter((h) => h.type === "order")
@@ -442,21 +438,34 @@ const app = {
       currency: "BRL",
     });
 
-    // Cria a mensagem
     const text = `Olá, ${client.nome}, aqui é da Sablina Lanches.\n\nSeu saldo devedor atual é: *${balanceFormatted}*.\n\nSegue em anexo o relatório detalhado.`;
 
-    // Abre o WhatsApp
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank");
   },
 
-  openPaymentModal: () => {
+  paySelectedItems: () => {
+    const selectedCheckboxes = document.querySelectorAll(
+      ".history-select:checked"
+    );
+
+    if (selectedCheckboxes.length === 0) {
+      return alert("Selecione pelo menos um item para pagar.");
+    }
+
+    const selectedIds = Array.from(selectedCheckboxes).map((cb) =>
+      String(cb.value)
+    );
+
+    app.openPaymentModal(selectedIds);
+  },
+
+  openPaymentModal: (preSelectedIds = []) => {
     const client = app.state.currentDetailClient;
     document.getElementById("payment-client-name").innerText = client.nome;
     document.getElementById("payment-amount").value = "";
     document.getElementById("payment-date").valueAsDate = new Date();
 
-    // Filtra apenas pedidos que são do tipo 'order' e NÃO estão pagos
     const pendingOrders = app.state.currentHistory.filter(
       (h) => h.type === "order" && !h.pago
     );
@@ -469,40 +478,45 @@ const app = {
         "<p class='text-muted text-sm'>Nenhum pedido pendente.</p>";
     } else {
       pendingOrders.forEach((order) => {
+        const isChecked = preSelectedIds.includes(String(order.id))
+          ? "checked"
+          : "";
+
         const div = document.createElement("div");
         div.className = "flex items-center gap-2 mb-2 p-2 border-bottom";
-        // Checkbox com ID do pedido e valor
+
         div.innerHTML = `
                 <input type="checkbox" class="order-checkbox" value="${
                   order.id
-                }" data-amount="${
-          order.amount
-        }" onchange="app.updatePaymentTotal()">
+                }" 
+                       data-amount="${order.amount}" 
+                       onchange="app.updatePaymentTotal()"
+                       ${isChecked}> 
                 <label class="text-sm">
                     ${new Date(order.date).toLocaleDateString("pt-BR")} - ${
           order.desc
         } 
-                    <strong>(R$ ${order.amount.toFixed(2)})</strong>
+                    <strong>(R$ ${parseFloat(order.amount).toFixed(2)})</strong>
                 </label>
             `;
         listContainer.appendChild(div);
       });
     }
+
+    app.updatePaymentTotal();
+
     ui.openModal("modal-payment");
   },
 
-  // 2. Soma automática ao clicar nos checkboxes
   updatePaymentTotal: () => {
     const checkboxes = document.querySelectorAll(".order-checkbox:checked");
     let total = 0;
     checkboxes.forEach((cb) => {
       total += parseFloat(cb.getAttribute("data-amount"));
     });
-    // Atualiza o campo de valor (se quiser permitir edição manual, remova o readonly do HTML)
     document.getElementById("payment-amount").value = total.toFixed(2);
   },
 
-  // 3. Salva o pagamento E atualiza os pedidos para 'pago = true'
   savePayment: async () => {
     const amount = parseFloat(document.getElementById("payment-amount").value);
     const method = document.getElementById("payment-method").value;
@@ -511,7 +525,6 @@ const app = {
 
     if (!amount || amount <= 0) return alert("Valor inválido");
 
-    // A. Registra o Pagamento
     const { error: payError } = await window._supabaseClient
       .from("pagamentos")
       .insert({
@@ -526,7 +539,6 @@ const app = {
       return alert("Erro ao registrar pagamento.");
     }
 
-    // B. Atualiza os pedidos selecionados para 'pago: true'
     const selectedCheckboxes = document.querySelectorAll(
       ".order-checkbox:checked"
     );
@@ -538,7 +550,7 @@ const app = {
       const { error: updateError } = await window._supabaseClient
         .from("pedidos")
         .update({ pago: true })
-        .in("id", orderIdsToUpdate); // Atualiza todos os IDs da lista
+        .in("id", orderIdsToUpdate); 
 
       if (updateError)
         console.error("Erro ao dar baixa nos pedidos", updateError);
@@ -546,7 +558,7 @@ const app = {
 
     ui.closeModal("modal-payment");
     alert("Pagamento salvo com sucesso!");
-    app.loadClientDetails(client.id); // Recarrega para atualizar a lista e saldo
+    app.loadClientDetails(client.id); 
   },
   openReportModal: () => {
     ui.openModal("modal-report");
@@ -564,98 +576,125 @@ const app = {
     }
   },
 
-  
   generatePDF: (type = "completo", start = null, end = null) => {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    
+
     let title = "Extrato de Conta";
     let history = app.state.currentHistory || [];
-    
+
     if (type === "selecionados") {
-        const selectedIds = Array.from(document.querySelectorAll('.history-select:checked')).map(cb => cb.value);
-        
-        if (selectedIds.length === 0) {
-            alert("Nenhum item selecionado na lista!");
-            return;
-        }
-        history = history.filter(h => selectedIds.includes(String(h.id)));
-        title = "Extrato: Itens Selecionados";
-        
-      } else if (type === "pendentes") {
-        history = history.filter((h) => h.type === "order");
-        title = "Relatório de Pendências";
-        
-      } else if (type === "periodo") {
-        if (!start || !end) return alert("Selecione as datas.");
-        
-        history = history.filter((h) => h.date >= start && h.date <= end);
-        
-        const startBr = start.split('-').reverse().join('/');
-        const endBr = end.split('-').reverse().join('/');
-        title = `Extrato: ${startBr} a ${endBr}`;
+      const selectedIds = Array.from(
+        document.querySelectorAll(".history-select:checked")
+      ).map((cb) => cb.value);
+
+      if (selectedIds.length === 0) {
+        alert("Nenhum item selecionado na lista!");
+        return;
       }
-      
-      history.sort((a, b) => (a.date > b.date ? 1 : -1));
-      
-      doc.setFontSize(18);
-      doc.text("LanchoneteCred", 14, 20);
-      doc.setFontSize(12);
-      doc.text(title, 14, 30);
-      if (app.state.currentDetailClient) {
-        doc.text(`Cliente: ${app.state.currentDetailClient.name}`, 14, 38);
-      }
-      
-      const tableData = history.map((h) => {
-        const parts = h.date.split('-');
-        const dateBr = `${parts[2]}/${parts[1]}/${parts[0]}`;
-        
-        let statusText = h.type === "payment" ? "Pago" : "Pendente"; 
-        
-        return [
-          dateBr,
-          h.type === "payment" ? "Pagamento" : "Pedido",
-          parseFloat(h.amount).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
-          statusText 
-        ];
-      });
+      history = history.filter((h) => selectedIds.includes(String(h.id)));
+      title = "Extrato: Itens Selecionados";
+    } else if (type === "pendentes") {
+      history = history.filter((h) => h.type === "order");
+      title = "Relatório de Pendências";
+    } else if (type === "periodo") {
+      if (!start || !end) return alert("Selecione as datas.");
+
+      history = history.filter((h) => h.date >= start && h.date <= end);
+
+      const startBr = start.split("-").reverse().join("/");
+      const endBr = end.split("-").reverse().join("/");
+      title = `Extrato: ${startBr} a ${endBr}`;
+    }
+
+    history.sort((a, b) => (a.date > b.date ? 1 : -1));
+
+    doc.setFontSize(18);
+    doc.text("LanchoneteCred", 14, 20);
+    doc.setFontSize(12);
+    doc.text(title, 14, 30);
+    if (app.state.currentDetailClient) {
+      doc.text(`Cliente: ${app.state.currentDetailClient.name}`, 14, 38);
+    }
+
+    const tableData = history.map((h) => {
+      const parts = h.date.split("-");
+      const dateBr = `${parts[2]}/${parts[1]}/${parts[0]}`;
+
+      let statusText = h.type === "payment" ? "Pago" : "Pendente";
+
+      return [
+        dateBr,
+        h.type === "payment" ? "Pagamento" : "Pedido",
+        parseFloat(h.amount).toLocaleString("pt-BR", {
+          style: "currency",
+          currency: "BRL",
+        }),
+        statusText,
+      ];
+    });
 
     doc.autoTable({
-        startY: 45,
-        head: [["Data", "Tipo", "Valor", "Status"]],
-        body: tableData,
-        theme: "grid",
-        styles: { fontSize: 10 },
-        headStyles: { fillColor: [225, 29, 72] }, 
-      });
-      
-      const finalY = doc.lastAutoTable.finalY + 10;
-      const totalOrder = history.filter(h => h.type === 'order').reduce((acc, c) => acc + Number(c.amount), 0);
-      const totalPay = history.filter(h => h.type === 'payment').reduce((acc, c) => acc + Number(c.amount), 0);
-      const balance = totalOrder - totalPay;
-      
-      doc.setFontSize(10);
-      doc.text(`Total Pedidos (nesta visualização): ${totalOrder.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`, 14, finalY);
-      doc.text(`Total Pagamentos (nesta visualização): ${totalPay.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`, 14, finalY + 6);
-      
-      doc.setFontSize(14);
-      doc.text(`Saldo Calculado: ${balance.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`, 14, finalY + 14);
-      
-      doc.save(`Extrato_${new Date().getTime()}.pdf`);
-      ui.closeModal("modal-report");
-    },
+      startY: 45,
+      head: [["Data", "Tipo", "Valor", "Status"]],
+      body: tableData,
+      theme: "grid",
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [225, 29, 72] },
+    });
 
-    confirmGeneratePDF: () => {
-      const type = document.getElementById("report-type").value;
-      const start = document.getElementById("report-start").value; 
-      const end = document.getElementById("report-end").value;     
-  
-      if (type === "periodo" && (!start || !end)) {
-          alert("Por favor, selecione as datas de início e fim.");
-          return;
-      }
-      app.generatePDF(type, start, end);
-    },
+    const finalY = doc.lastAutoTable.finalY + 10;
+    const totalOrder = history
+      .filter((h) => h.type === "order")
+      .reduce((acc, c) => acc + Number(c.amount), 0);
+    const totalPay = history
+      .filter((h) => h.type === "payment")
+      .reduce((acc, c) => acc + Number(c.amount), 0);
+    const balance = totalOrder - totalPay;
+
+    doc.setFontSize(10);
+    doc.text(
+      `Total Pedidos (nesta visualização): ${totalOrder.toLocaleString(
+        "pt-BR",
+        { style: "currency", currency: "BRL" }
+      )}`,
+      14,
+      finalY
+    );
+    doc.text(
+      `Total Pagamentos (nesta visualização): ${totalPay.toLocaleString(
+        "pt-BR",
+        { style: "currency", currency: "BRL" }
+      )}`,
+      14,
+      finalY + 6
+    );
+
+    doc.setFontSize(14);
+    doc.text(
+      `Saldo Calculado: ${balance.toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+      })}`,
+      14,
+      finalY + 14
+    );
+
+    doc.save(`Extrato_${new Date().getTime()}.pdf`);
+    ui.closeModal("modal-report");
+  },
+
+  confirmGeneratePDF: () => {
+    const type = document.getElementById("report-type").value;
+    const start = document.getElementById("report-start").value;
+    const end = document.getElementById("report-end").value;
+
+    if (type === "periodo" && (!start || !end)) {
+      alert("Por favor, selecione as datas de início e fim.");
+      return;
+    }
+    app.generatePDF(type, start, end);
+  },
 };
 
 window.addEventListener("DOMContentLoaded", app.init);
