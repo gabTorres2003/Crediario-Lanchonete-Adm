@@ -26,6 +26,7 @@ const app = {
     }
 
     app.loadDailySummary();
+    
     if (window.lucide) lucide.createIcons();
   },
 
@@ -74,16 +75,14 @@ const app = {
   toggleHistoryOrder: () => {
     app.state.historyAsc = !app.state.historyAsc;
     app.filterHistory();
-    console.log(
-      "Ordenação alterada para:",
-      app.state.historyAsc ? "Antigos primeiro" : "Novos primeiro"
-    );
   },
 
   navigate: (page) => {
     ui.toggleView(page);
     if (page === "clients") app.loadClients();
     if (page === "dashboard") app.loadDailySummary();
+    
+    if (window.lucide) lucide.createIcons();
   },
 
   formatCurrency: (val) => {
@@ -110,7 +109,7 @@ const app = {
     const phone = document.getElementById("new-client-phone").value;
     const obs = document.getElementById("new-client-obs").value;
 
-    if (!name) return alert("Nome é obrigatório");
+    if (!name) return ui.alert("Atenção", "Nome é obrigatório", "warning");
 
     const payload = {
       nome: name,
@@ -125,7 +124,7 @@ const app = {
 
     if (error) {
       console.error("Erro Insert:", error);
-      return alert("Erro ao salvar: " + error.message);
+      return ui.alert("Erro", "Erro ao salvar: " + error.message, "danger");
     }
 
     ui.closeModal("modal-client");
@@ -135,7 +134,7 @@ const app = {
       document.getElementById("new-client-obs").value = "";
 
     app.loadClients();
-    await ui.alert("Sucesso", "Cliente atualizado com sucesso!", "success");
+    await ui.alert("Sucesso", "Cliente cadastrado com sucesso!", "success");
   },
 
   openEditClientModal: () => {
@@ -154,7 +153,7 @@ const app = {
     const nome = document.getElementById("edit-client-name").value;
     const telefone = document.getElementById("edit-client-phone").value;
 
-    if (!nome) return alert("O nome é obrigatório!");
+    if (!nome) return ui.alert("Atenção", "O nome é obrigatório!", "warning");
 
     const { error } = await window._supabaseClient
       .from("clientes")
@@ -163,17 +162,16 @@ const app = {
 
     if (error) {
       console.error(error);
-      return alert("Erro ao atualizar: " + error.message);
+      return ui.alert("Erro", "Erro ao atualizar: " + error.message, "danger");
     }
 
-    alert("Cliente atualizado com sucesso!");
     ui.closeModal("modal-edit-client");
+    await ui.alert("Sucesso", "Cliente atualizado com sucesso!", "success");
 
     app.state.currentDetailClient.nome = nome;
     app.state.currentDetailClient.telefone = telefone;
 
     app.openClientDetails(app.state.currentDetailClient.id);
-
     app.loadClients();
   },
 
@@ -309,8 +307,8 @@ const app = {
     const date = document.getElementById("order-date").value;
 
     if (!amount || isNaN(amount) || amount <= 0)
-      return ui.alert("Digite um valor válido");
-
+      return ui.alert("Atenção", "Digite um valor válido", "warning");
+    
     const { error } = await window._supabaseClient.from("pedidos").insert({
       cliente_id: app.state.selectedClientForOrder.id,
       total: amount,
@@ -318,7 +316,7 @@ const app = {
       data_pedido: date,
     });
 
-    if (error) return alert("Erro ao salvar pedido: " + error.message);
+    if (error) return ui.alert("Erro", "Erro ao salvar pedido: " + error.message, "danger");
 
     await ui.alert("Sucesso", "Pedido registrado!", "success");
     ui.clearSelectedClient();
@@ -411,7 +409,7 @@ const app = {
       .eq("id", clientId);
 
     if (error || !clients || clients.length === 0)
-      return alert("Erro ao carregar cliente.");
+      return ui.alert("Erro", "Erro ao carregar cliente.", "danger");
 
     const client = clients[0];
     app.state.currentDetailClient = client;
@@ -451,12 +449,13 @@ const app = {
 
     ui.showClientDetails(clientForUI, history, debt);
     app.filterHistory();
+    if (window.lucide) lucide.createIcons();
   },
 
   sendWhatsApp: () => {
     const client = app.state.currentDetailClient;
     if (!client || !client.telefone) {
-      return alert("Cliente sem telefone cadastrado.");
+      return ui.alert("Atenção", "Cliente sem telefone cadastrado.", "warning");
     }
 
     let phone = client.telefone.replace(/\D/g, "");
@@ -491,7 +490,7 @@ const app = {
     );
 
     if (selectedCheckboxes.length === 0) {
-      return alert("Selecione pelo menos um item para pagar.");
+      return ui.alert("Atenção", "Selecione pelo menos um item para pagar.", "warning");
     }
 
     const selectedIds = Array.from(selectedCheckboxes).map((cb) =>
@@ -505,7 +504,8 @@ const app = {
     const client = app.state.currentDetailClient;
     document.getElementById("payment-client-name").innerText = client.nome;
     document.getElementById("payment-amount").value = "";
-    document.getElementById("payment-date").valueAsDate = new Date();
+    const dateInput = document.getElementById("payment-date");
+    if(dateInput) dateInput.valueAsDate = new Date();
 
     const pendingOrders = app.state.currentHistory.filter(
       (h) => h.type === "order" && !h.pago
@@ -564,7 +564,7 @@ const app = {
     const date = document.getElementById("payment-date").value;
     const client = app.state.currentDetailClient;
 
-    if (!amount || amount <= 0) return await ui.alert("Valor inválido");
+    if (!amount || amount <= 0) return await ui.alert("Atenção", "Valor inválido", "warning");
 
     const { error: payError } = await window._supabaseClient
       .from("pagamentos")
@@ -577,7 +577,7 @@ const app = {
 
     if (payError) {
       console.error(payError);
-      return await ui.alert("Erro ao registrar pagamento");
+      return await ui.alert("Erro", "Erro ao registrar pagamento", "danger");
     }
 
     const selectedCheckboxes = document.querySelectorAll(
@@ -601,20 +601,11 @@ const app = {
     await ui.alert("Sucesso", "Pagamento salvo com sucesso!", "success");
     app.loadClientDetails(client.id);
   },
+  
   openReportModal: () => {
     ui.openModal("modal-report");
     document.getElementById("report-type").value = "completo";
     document.getElementById("report-dates").classList.add("hidden");
-  },
-
-  toggleReportDates: () => {
-    const type = document.getElementById("report-type").value;
-    const dateDiv = document.getElementById("report-dates");
-    if (type === "periodo") {
-      dateDiv.classList.remove("hidden");
-    } else {
-      dateDiv.classList.add("hidden");
-    }
   },
 
   generatePDF: (type = "completo", start = null, end = null) => {
@@ -739,7 +730,7 @@ const app = {
     const end = document.getElementById("report-end").value;
 
     if (type === "periodo" && (!start || !end)) {
-      alert("Por favor, selecione as datas de início e fim.");
+      ui.alert("Atenção", "Por favor, selecione as datas de início e fim.", "warning");
       return;
     }
     app.generatePDF(type, start, end);
