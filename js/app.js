@@ -9,7 +9,8 @@ const app = {
   init: () => {
     console.log("App v2 iniciado.");
 
-    // Verifica conexão
+    if (window.ui && ui.initIcons) ui.initIcons();
+
     if (!window._supabaseClient) {
       console.error("Cliente Supabase não disponível.");
       return;
@@ -376,6 +377,7 @@ const app = {
                 `;
         list.appendChild(div);
       });
+      if (ui && ui.refreshIcons) ui.refreshIcons();
     }
   },
 

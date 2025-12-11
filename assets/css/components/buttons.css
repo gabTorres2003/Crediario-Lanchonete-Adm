@@ -34,8 +34,13 @@
 .btn-success:hover { filter: brightness(0.9); }
 
 .btn-icon {
-    padding: 8px;
-    border-radius: 50%;
+    flex-shrink: 0; 
+    width: 42px;    
+    height: 42px;  
+    padding: 0;    
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-danger {

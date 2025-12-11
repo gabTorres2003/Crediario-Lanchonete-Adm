@@ -52,32 +52,29 @@
 }
 
 @media (max-width: 768px) {
-    .header-content { 
-        padding: 0 12px; 
+    :root {
+        --header-height: 60px;
     }
-<<<<<<< Updated upstream
 
-=======
->>>>>>> Stashed changes
-    .nav-btn span { 
+    .header-content { 
+        padding: 0 16px; 
+    }
+
+    .logo span {
+        font-size: 1rem; 
+    }
+    
+    .header-logo {
+        height: 40px; 
+    }
+}
+
+@media (max-width: 480px) {
+    .logo span {
         display: none; 
     }
     
     .nav-btn {
-        padding: 8px; 
-    }
-<<<<<<< Updated upstream
-    
-=======
-
->>>>>>> Stashed changes
-    .header-logo {
-        height: 32px;
-    }
-}
-
-@media (max-width: 380px) {
-    .logo span {
-        display: none; 
+        padding: 6px 10px;
     }
 }
