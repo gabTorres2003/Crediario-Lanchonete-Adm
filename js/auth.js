@@ -86,9 +86,3 @@ window.auth = {
         document.getElementById('login-view').classList.remove('hidden');
     }
 };
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', window.auth.init);
-} else {
-    window.auth.init();
-}
