@@ -815,5 +815,3 @@ const app = {
     app.loadClients();
   },
 };
-
-window.addEventListener("DOMContentLoaded", app.init);
