@@ -56,7 +56,7 @@ O projeto foi construído focado em performance e simplicidade de manutenção, 
 
 ### 1. Tela de Login 
 Primeira tela exibida ao usuário acessar o link.
-![Login](assets/screenshots/tela_login.png)
+![Login](assets/screenshots/tela_login.PNG)
 
 ### 2. Dashboard Principal
 Visão geral do caixa e registro rápido de pedidos.
