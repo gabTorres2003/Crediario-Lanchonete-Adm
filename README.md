@@ -60,19 +60,19 @@ Primeira tela exibida ao usuário acessar o link.
 
 ### 2. Dashboard Principal
 Visão geral do caixa e registro rápido de pedidos.
-![Dashboard](assets/screenshots/dashboard_placeholder.png)
+![Dashboard](assets/screenshots/dashboard_placeholder.PNG)
 
 ### 3. Lista de Clientes
 Controle visual de quem deve e quem está em dia.
-![Clientes](assets/screenshots/clientes_placeholder.png)
+![Clientes](assets/screenshots/clientes_placeholder.PNG)
 
 ### 4. Detalhes do Cliente e Extrato
 Histórico detalhado de consumo e pagamentos.
-![Detalhes](assets/screenshots/detalhes_placeholder.png)
+![Detalhes](assets/screenshots/detalhes_placeholder.PNG)
 
 ### 5. Geração de PDF e Cobrança
 Exemplo de relatório gerado pelo sistema.
-![PDF](assets/screenshots/pdf_placeholder.png)
+![PDF](assets/screenshots/pdf_placeholder.PNG)
 
 ---
 
